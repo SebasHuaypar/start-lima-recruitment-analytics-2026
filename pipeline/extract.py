@@ -1,7 +1,7 @@
 import pandas as pd
 from config import supabase
 
-def extract_submitted_applications():
+def extract_applications():
 
     response = (
         supabase

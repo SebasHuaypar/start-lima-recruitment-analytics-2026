@@ -29,10 +29,80 @@ UNIVERSITY_MAP = {
     "UARM": "Universidad Antonio Ruiz de Montoya",
     "INSTITUTO POLITECNICO NACIONAL": "Instituto Politécnico Nacional",
     "UNIVERSIDAD NACIONAL DEL SANTA": "Universidad Nacional del Santa",
+    "UNPRG": "Universidad Nacional Pedro Ruiz Gallo",
+    "UNSAAC": "Universidad Nacional de San Antonio Abad del Cusco",
+    "Tecsup": "TECSUP",
+    "Unalm": "Universidad Nacional Agraria La Molina",
+    "DNT UPAO": "Universidad Privada Antenor Orrego",
+    "IDAT": "IDAT",
+    "Wiener": "Universidad Norbert Wiener",
+    "Universidad continental": "Universidad Continental",
+    "UNIVERSIDAD NACIONAL DE MOQUEGUA": "Universidad Nacional de Moquegua",
+    "Senati": "SENATI",
+    "Estudié Escuela ISIL": "Instituto San Ignacio de Loyola",
+    "USAT": "Universidad Católica Santo Toribio de Mogrovejo",
+    "Ucsur": "Universidad Científica del Sur",
+    "Toulouse Lautrec": "Instituto Toulouse Lautrec",
+    "CIBERTEC": "Cibertec",
+    "UNIVERSIDAD CATOLICA SANTO TORIBIO DE MOGROVEJO": "Universidad Católica Santo Toribio de Mogrovejo",
+    "UNI": "Universidad Nacional de Ingeniería",
+    "UNCP": "Universidad Nacional del Centro del Perú",
+    "UCSM": "Universidad Católica de Santa María",
+    "UNSCH": "Universidad Nacional de San Cristóbal de Huamanga",
+    "upn": "Universidad Privada del Norte",
+    "Universidad Nacional de San Cristóbal de Huamanga": "Universidad Nacional de San Cristóbal de Huamanga",
 }
+
+def classify_education_type(university):
+
+    if pd.isna(university):
+        return None
+
+    university = str(university).lower()
+
+    if any(keyword in university for keyword in [
+        "instituto",
+        "isil",
+        "senati",
+        "cibertec",
+        "certus",
+        "idat",
+        "tecsup",
+        "toulouse"
+    ]):
+        return "Institute"
+
+    elif any(keyword in university for keyword in [
+        "independiente",
+        "no estudio",
+        "ninguna"
+    ]):
+        return "Self-Taught"
+
+    elif any(keyword in university for keyword in [
+        "australia",
+        "uanl",
+        "federal do pará"
+    ]):
+        return "International"
+
+    else:
+        return "University"
+
 
 def normalize_data(clean_df):
 
+    # Let's explore the university, channel, and cycle distributions before normalization:
+    print("\nUNIVERSITIES:\n")
+    print(clean_df["university"].value_counts(dropna=False))
+
+    print("\nCHANNELS:\n")
+    print(clean_df["channel"].value_counts(dropna=False))
+
+    print("\nCYCLES:\n")
+    print(clean_df["cycle"].value_counts(dropna=False))
+
+    # Now, let's clean and normalize the university names:
     # Remove "Otra (Especificar):"
     clean_df["university"] = (
         clean_df["university"]
@@ -53,11 +123,62 @@ def normalize_data(clean_df):
         .replace(UNIVERSITY_MAP)
     )
 
+    # Education type classification
+    clean_df["education_type"] = (
+        clean_df["university_normalized"]
+        .apply(classify_education_type)
+    )
+
+    # Create numeric cycle feature
+    clean_df["cycle_numeric"] = (
+        clean_df["cycle"]
+        .replace({
+            "Egresado(a)": 11
+        })
+    )
+
+    clean_df["cycle_numeric"] = pd.to_numeric(
+        clean_df["cycle_numeric"],
+        errors="coerce"
+    ).astype("Int64")
+
+    # Feature engineering
+    clean_df["has_linkedin"] = (
+        clean_df["linkedin"]
+        .notna()
+    )
+
+    clean_df["goals_length"] = (
+        clean_df["goals"]
+        .fillna("")
+        .str.len()
+    )
+
+    clean_df["project_length"] = (
+        clean_df["project"]
+        .fillna("")
+        .str.len()
+    )
+
+    clean_df["activities_length"] = (
+        clean_df["activities"]
+        .fillna("")
+        .str.len()
+    )
+
+    # Final validation outputs
     print("\nNORMALIZED UNIVERSITIES:\n")
 
     print(
         clean_df["university_normalized"]
-        .value_counts()
+        .value_counts(dropna=False)
+    )
+
+    print("\nEDUCATION TYPES:\n")
+
+    print(
+        clean_df["education_type"]
+        .value_counts(dropna=False)
     )
 
     return clean_df

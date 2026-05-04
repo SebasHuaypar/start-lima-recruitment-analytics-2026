@@ -5,14 +5,13 @@ def extract_submitted_applications():
 
     response = (
         supabase
-        .table("applications_full")
+        .table("applications")
         .select("*")
-        .eq("status", "submitted")
         .execute()
     )
 
     df = pd.DataFrame(response.data)
 
-    print(f"\nSubmitted applications: {len(df)}")
+    print(f"\nTotal applications: {len(df)}")
 
     return df

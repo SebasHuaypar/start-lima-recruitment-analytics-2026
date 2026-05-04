@@ -18,8 +18,24 @@ def load_clean_data(clean_df):
 
     print(clean_df.isna().sum())
 
+    # Convert date/datetime columns to string
+    for col in clean_df.columns:
+
+        if pd.api.types.is_datetime64_any_dtype(clean_df[col]):
+            clean_df[col] = clean_df[col].astype(str)
+
+        elif clean_df[col].apply(lambda x: isinstance(x, pd.Timestamp)).any():
+            clean_df[col] = clean_df[col].astype(str)
+
+        elif clean_df[col].apply(
+            lambda x: hasattr(x, "isoformat") if x is not None else False
+        ).any():
+            clean_df[col] = clean_df[col].astype(str)
+
+    # Convert dataframe to dictionary
     clean_data = clean_df.to_dict(orient="records")
 
+    # Load data into Supabase
     response = (
         supabase
         .table("applications_clean")

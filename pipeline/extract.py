@@ -3,6 +3,7 @@ from config import supabase
 
 def extract_applications():
 
+    # Fetch all raw application records directly from the Supabase database:
     response = (
         supabase
         .table("applications")
@@ -10,6 +11,7 @@ def extract_applications():
         .execute()
     )
 
+    # Convert the JSON response data into a Pandas DataFrame for easier manipulation
     df = pd.DataFrame(response.data)
 
     print(f"\nTotal applications: {len(df)}")

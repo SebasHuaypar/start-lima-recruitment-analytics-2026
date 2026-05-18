@@ -40,7 +40,7 @@ def transform_applications(df):
 
     clean_df = pd.DataFrame(parsed_rows)
 
-    # Date features:
+    # Extract specific date components from the created_at timestamp for filtering:
     clean_df["created_at"] = pd.to_datetime(
     clean_df["created_at"]
     )
@@ -71,51 +71,9 @@ def transform_applications(df):
         .dt.day_name()
     )
 
-    # Application status feature
+    # Determine if the application was fully submitted or just a draft:
     clean_df["is_submitted"] = (
         clean_df["status"] == "submitted"
-    )
-
-    # LinkedIn feature
-    clean_df["has_linkedin"] = (
-        clean_df["linkedin"].notna()
-    )
-
-    # Text length features
-    clean_df["goals_length"] = (
-        clean_df["goals"]
-        .fillna("")
-        .str.len()
-    )
-
-    clean_df["project_length"] = (
-        clean_df["project"]
-        .fillna("")
-        .str.len()
-    )
-
-    clean_df["activities_length"] = (
-        clean_df["activities"]
-        .fillna("")
-        .str.len()
-    )
-
-    # Numeric cycle feature
-    clean_df["cycle_numeric"] = (
-        clean_df["cycle"]
-        .replace({
-            "Egresado(a)": 11
-        })
-    )
-
-    clean_df["cycle_numeric"] = pd.to_numeric(
-        clean_df["cycle_numeric"],
-        errors="coerce"
-    )
-
-    clean_df["cycle_numeric"] = (
-        clean_df["cycle_numeric"]
-        .astype("Int64")
     )
 
     return clean_df

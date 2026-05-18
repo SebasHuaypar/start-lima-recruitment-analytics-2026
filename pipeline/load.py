@@ -3,7 +3,7 @@ from config import supabase
 
 def load_clean_data(clean_df):
 
-    # Handle nulls and inf values
+    # Explicitly replace Pandas 'NaN' or 'NaT' with Python 'None' for Supabase compatibility:
     clean_df = (
         clean_df
         .replace({pd.NA: None})
@@ -18,7 +18,7 @@ def load_clean_data(clean_df):
 
     print(clean_df.isna().sum())
 
-    # Convert date/datetime columns to string
+    # Loop through all columns to identify and cast any dates into standard strings for JSON:
     for col in clean_df.columns:
 
         if pd.api.types.is_datetime64_any_dtype(clean_df[col]):
@@ -32,10 +32,10 @@ def load_clean_data(clean_df):
         ).any():
             clean_df[col] = clean_df[col].astype(str)
 
-    # Convert dataframe to dictionary
+    # Convert to a list of dictionaries as required by the Supabase Python client:
     clean_data = clean_df.to_dict(orient="records")
 
-    # Load data into Supabase
+    # Upsert the clean data into the 'applications_clean' table to update existing records:
     response = (
         supabase
         .table("applications_clean")

@@ -8,14 +8,15 @@ This project extracts application data from Supabase, transforms semi-structured
 
 # Project Overview
 
-The recruitment platform stores applicant responses inside a JSON field (`answers`) within the `applications_full` table.
+The recruitment platform stores applicant responses inside a JSON field (`answers`) within the `applications` table.
 
 This pipeline:
 
-- Extracts submitted applications from Supabase
+- Extracts applications from Supabase
 - Parses and flattens JSON responses
-- Cleans and standardizes raw data
-- Normalizes university names and categorical values
+- Cleans and standardizes raw data, ignoring irrelevant fields
+- Generates engagement scores, text length metrics, and date features
+- Normalizes university names, acquisition channels, and education types
 - Loads analytics-ready data into a clean table (`applications_clean`)
 - Prepares the dataset for Power BI dashboards and future analytics workflows
 
@@ -28,25 +29,25 @@ This pipeline:
 - Supabase
 - PostgreSQL
 - dotenv
-- Power BI (next stage)
+- Power BI
 
 ---
 
 # ETL Pipeline Architecture
 
 ```text
-applications_full (raw data)
-        ↓
+applications (raw data)
+        |
     Extract
-        ↓
+        |
  JSON Parsing & Flattening
-        ↓
- Data Cleaning & Normalization
-        ↓
+        |
+ Feature Engineering & Normalization
+        |
 applications_clean (analytics-ready)
-        ↓
+        |
      Power BI
-````
+```
 
 ---
 
@@ -54,18 +55,23 @@ applications_clean (analytics-ready)
 
 ```text
 start-lima-analytics/
-│
-├── pipeline/
-│   ├── config.py
-│   ├── extract.py
-│   ├── transform.py
-│   ├── normalize.py
-│   ├── load.py
-│   └── pipeline.py
-│
-├── .env
-├── requirements.txt
-└── README.md
+|
+|-- pipeline/
+|   |-- config.py
+|   |-- extract.py
+|   |-- transform.py
+|   |-- normalize_data.py
+|   |-- normalize/
+|   |   |-- __init__.py
+|   |   |-- channels.py
+|   |   |-- helpers.py
+|   |   |-- universities.py
+|   |-- load.py
+|   |-- pipeline.py
+|
+|-- .env
+|-- requirements.txt
+|-- README.md
 ```
 
 ---
@@ -74,41 +80,45 @@ start-lima-analytics/
 
 ## Data Extraction
 
-* Real-time connection to Supabase
-* Extraction of submitted applications only
+- Connection to Supabase PostgreSQL database
+- Extraction of raw application records
 
 ## Data Transformation
 
-* JSON parsing from application responses
-* Flattening nested applicant data into tabular format
+- JSON parsing from application responses
+- Flattening nested applicant data into tabular format
+- Extraction of datetime components (Year, Month, Week, Day)
 
-## Data Cleaning
+## Feature Engineering
 
-* Null and invalid value handling
-* Removal of noisy text patterns
-* Standardization of categorical values
+- Calculation of text lengths for open-ended questions (goals, projects, activities)
+- Creation of boolean flags (has_linkedin, is_submitted)
+- Implementation of a custom Engagement Score system (0-4) based on applicant effort
+- Classification of engagement tiers (Low, Medium, High)
 
-## University Normalization
+## Data Normalization
 
-* Regex-based cleaning
-* Semantic normalization using mapping dictionaries
-* Consolidation of abbreviations and inconsistent naming
+- Regular expression cleaning for prefixes and tricky text patterns
+- Robust dictionary-mapping for University variants to canonical names and BI-friendly abbreviations
+- Smart inference and mapping for acquisition channels (WhatsApp, LinkedIn, Email, Referral)
+- Categorization of education types (University, Institute, Self-Taught)
 
 ## Data Loading
 
-* Upsert logic to avoid duplicates
-* Automated synchronization with Supabase
+- Safe null and datetime handling for JSON serialization compatibility
+- Upsert logic based on primary keys to avoid duplicates
+- Automated synchronization with Supabase
 
 ---
 
 # Example Normalization
 
-| Raw Value | Normalized Value                          |
-| --------- | ----------------------------------------- |
-| UPC       | Universidad Peruana de Ciencias Aplicadas |
-| PUCP      | Pontificia Universidad Católica del Perú  |
-| UTP       | Universidad Tecnológica del Perú          |
-| Usil      | Universidad San Ignacio de Loyola         |
+| Raw Value | Canonical Name | Short Version |
+| --------- | ----------------------------------------- | ------------- |
+| upc | Universidad Peruana de Ciencias Aplicadas | UPC |
+| dnt upao | Universidad Privada Antenor Orrego | UPAO |
+| wsp | WhatsApp | WhatsApp |
+| wssp | WhatsApp | WhatsApp |
 
 ---
 
@@ -117,20 +127,23 @@ start-lima-analytics/
 - [x] Modular ETL pipeline completed
 - [x] Data normalization layer completed
 - [x] Analytics-ready database table completed
-- [ ] Power BI dashboard integration
-- [ ] KPI tracking and recruitment analytics
+- [x] Power BI dashboard integration
+- [x] KPI tracking and recruitment analytics
 - [ ] Portfolio web integration
 
 ---
 
 # Future Improvements
 
-* Incremental processing
-* Automated scheduled runs
-* Additional categorical normalization
-* Dimensional modeling
-* Advanced recruitment KPIs
-* Interactive dashboard embedding
+## Data Engineering
+- Incremental data loading (avoiding full table scans during upsert)
+- Automated scheduled runs via CI/CD or cron jobs
+
+## Power BI Dashboard
+- **Executive Storytelling:** Refining the narrative flow and actionable insights for stakeholders
+- **UX & Layout:** Implementing intuitive navigation and a cleaner visual hierarchy
+- **START Lima Branding:** Applying corporate design tokens (colors, custom typography)
+- **Advanced DAX:** Implementing time-intelligence metrics (e.g., Week-over-Week growth)
 
 ---
 
@@ -138,7 +151,7 @@ start-lima-analytics/
 
 <div align="center">
 
-##  Sebastián Huaypar Acurio
+## Sebastián Huaypar Acurio
 
 Computer Science Student @ UNI  
 AI, Data Science & Analytics Engineering Enthusiast  
